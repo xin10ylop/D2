@@ -1,0 +1,648 @@
+<title>Weekend Variance — Kalshi / Polymarket / Deribit</title>
+
+<style>
+:root{
+  color-scheme: light;
+  --paper:#F1F3F6; --panel:#FAFBFC; --ink:#131720; --ink-2:#3C4553; --muted:#6B7480;
+  --rule:#D3D8E0; --rule-2:#E4E8ED;
+  --accent:#9A6414;            /* ochre — signal, never a series */
+  --s1:#B03A26;               /* series 1 · market implied */
+  --s2:#0E8F79;               /* series 2 · fair / model */
+  --grid:#DFE3E9;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --paper:#0E1116; --panel:#161B22; --ink:#E8ECF2; --ink-2:#B3BCC8; --muted:#8892A0;
+    --rule:#2A313B; --rule-2:#1E242C;
+    --accent:#D8A24A;
+    --s1:#CF5A45; --s2:#22A98F;
+    --grid:#252C35;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0E1116; --panel:#161B22; --ink:#E8ECF2; --ink-2:#B3BCC8; --muted:#8892A0;
+  --rule:#2A313B; --rule-2:#1E242C;
+  --accent:#D8A24A;
+  --s1:#CF5A45; --s2:#22A98F;
+  --grid:#252C35;
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --paper:#F1F3F6; --panel:#FAFBFC; --ink:#131720; --ink-2:#3C4553; --muted:#6B7480;
+  --rule:#D3D8E0; --rule-2:#E4E8ED; --accent:#9A6414;
+  --s1:#B03A26; --s2:#0E8F79; --grid:#DFE3E9;
+}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px;}
+.col{max-width:68ch;}
+h1,h2,h3{font-family:var(--mono);font-weight:600;text-wrap:balance;letter-spacing:-.01em;}
+h1{font-size:clamp(28px,4.4vw,42px);line-height:1.14;margin:0 0 14px;letter-spacing:-.03em;}
+h2{font-size:20px;margin:0 0 8px;letter-spacing:-.01em;}
+h3{font-size:15px;margin:0 0 6px;color:var(--ink-2);}
+p{margin:0 0 16px;}
+a{color:var(--accent);}
+strong{font-weight:650;}
+code,.num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+code{font-size:.88em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px;}
+header{padding:56px 0 34px;border-bottom:1px solid var(--rule);margin-bottom:40px;}
+.lede{font-size:19px;line-height:1.55;color:var(--ink-2);max-width:62ch;margin:0;}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:22px;
+  display:flex;flex-wrap:wrap;gap:6px 20px;}
+
+section{margin-bottom:52px;scroll-margin-top:20px;}
+.step{display:flex;gap:16px;align-items:baseline;border-top:1px solid var(--rule);
+  padding-top:14px;margin-bottom:20px;}
+.step-n{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:650;
+  letter-spacing:.08em;flex:none;padding-top:3px;}
+
+.plates{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin:26px 0;}
+.plate{background:var(--panel);padding:16px 18px;}
+.plate .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;}
+.plate .v{font-family:var(--mono);font-size:27px;font-weight:650;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;line-height:1.05;}
+.plate .q{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.4;}
+.v.hot{color:var(--s1);} .v.cool{color:var(--s2);} .v.sig{color:var(--accent);}
+
+figure{margin:26px 0;background:var(--panel);border:1px solid var(--rule);padding:18px 18px 12px;}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5;
+  padding-top:10px;border-top:1px solid var(--rule-2);}
+.viz{width:100%;}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:11.5px;
+  color:var(--ink-2);margin-bottom:12px;}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:6px;
+  vertical-align:-1px;}
+
+.scroll{overflow-x:auto;margin:22px 0;border:1px solid var(--rule);background:var(--panel);}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+th,td{padding:7px 13px;text-align:right;border-bottom:1px solid var(--rule-2);}
+th{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;background:var(--paper);position:sticky;top:0;}
+td:first-child,th:first-child{text-align:left;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--rule-2);}
+.hot{color:var(--s1);} .cool{color:var(--s2);}
+table.txt{white-space:normal;}
+table.txt th,table.txt td{text-align:left;vertical-align:top;}
+table.txt td:nth-child(n+2):nth-child(-n+4),
+table.txt th:nth-child(n+2):nth-child(-n+4){text-align:right;white-space:nowrap;}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:2px;border:1px solid currentColor;}
+.tag.sell{color:var(--s1);} .tag.ok{color:var(--muted);} .tag.buy{color:var(--s2);}
+
+.callout{border-left:3px solid var(--accent);background:var(--panel);padding:16px 20px;
+  margin:24px 0;}
+.callout p:last-child{margin-bottom:0;}
+ul{margin:0 0 16px;padding-left:20px;} li{margin-bottom:7px;}
+hr{border:none;border-top:1px solid var(--rule);margin:44px 0;}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--paper);
+  font-family:var(--mono);font-size:11.5px;padding:6px 9px;border-radius:3px;
+  opacity:0;transition:opacity .1s;z-index:50;white-space:pre;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Cross-venue derivatives research · BTC &amp; ETH</p>
+  <h1>The weekend nobody hedges</h1>
+  <p class="lede">Kalshi, Polymarket and Deribit agree on Bitcoin and Ether to within a few basis
+  points on every day that Deribit lists an option. They diverge sharply on exactly the two days
+  it doesn't — and that gap is the only thing in this dataset that survives fees, spreads and a
+  bootstrap.</p>
+  <div class="meta">
+    <span>Snapshot <span class="num" id="snap"></span></span>
+    <span><span class="num" id="c1"></span> live contracts</span>
+    <span><span class="num" id="c2"></span> order books</span>
+    <span><span class="num" id="c3"></span> hourly bars</span>
+  </div>
+</header>
+
+<section class="col">
+<h2>What was pulled</h2>
+<p>Three venues, complete books, one simultaneous snapshot. Kalshi and Polymarket each list two
+redundant ladders per event — a "price above X" digital ladder and a "price in bucket [a,b)"
+ladder — that settle on the <em>identical</em> print, so each venue states its distribution twice.
+Deribit supplies the reference options surface.</p>
+</section>
+
+<div class="scroll">
+<table class="txt">
+<thead><tr><th>Venue</th><th>Instr.</th><th>Quoted</th><th>Books</th><th>Settles on</th><th>Horizons captured</th></tr></thead>
+<tbody>
+<tr><td>Kalshi<br><span class="num" style="font-size:11px;color:var(--muted)">KXBTCD · KXBTC · KXETHD · KXETH</span></td><td class="num">34,840</td><td class="num">1,416</td><td class="num">147</td><td>BRTI/ETHRTI 60s avg <span class="num">(USD)</span></td><td>hourly → Aug 5, plus Fri Aug 7 21:00Z</td></tr>
+<tr><td>Polymarket<br><span class="num" style="font-size:11px;color:var(--muted)">above ___ · price on</span></td><td class="num">264</td><td class="num">264</td><td class="num">264</td><td>Binance /USDT 1m close <span class="num">(USDT)</span></td><td>daily 16:00Z, Aug 4 → Aug 9</td></tr>
+<tr><td>Deribit<br><span class="num" style="font-size:11px;color:var(--muted)">options + futures</span></td><td class="num">1,544</td><td class="num">1,544</td><td class="num">494</td><td>Deribit index 30m TWAP <span class="num">(USD)</span></td><td>08:00Z dailies Aug 4–7, then Aug 14/21/28 → Jun 27</td></tr>
+</tbody>
+</table>
+</div>
+
+<section class="col">
+<p>Everything below is priced at executable levels: buying pays the ask, selling pays the bid,
+Kalshi's <code>0.07·P·(1−P)</code> taker fee is charged on entry, and size is read off the book
+level by level.</p>
+</section>
+
+<hr>
+
+<section>
+<p class="eyebrow">The chain</p>
+<h2 class="col">Four things had to be ruled out first</h2>
+
+<div class="col">
+<div class="step"><span class="step-n">01</span><div>
+<h3>Static arbitrage inside each venue — none</h3>
+<p>Each event's two ladders were thrown into one linear program over the exact state partition:
+maximise the worst-case payoff of a prepaid portfolio subject to book depth. A positive
+optimum is money regardless of where the underlying prints. Across all 176 events the best
+result was <span class="num">6 bp</span>. These books are internally clean.</p>
+</div></div>
+
+<div class="step"><span class="step-n">02</span><div>
+<h3>Level arbitrage between venues — none, once the peg is applied</h3>
+<p>Polymarket settles on Binance <em>USDT</em>; Kalshi and Deribit on USD. Binance's BTC/USDC
+price sits on the USD composite, so the whole gap is the stablecoin peg — currently
+<span class="num" id="pegbtc"></span> for BTC. Apply it and the two venues' implied forwards
+agree to <strong>$3 on a $63,650 underlying</strong>. Skip it and you invent a 2-point
+probability edge on every at-the-money digital.</p>
+</div></div>
+
+<div class="step"><span class="step-n">03</span><div>
+<h3>Shape edge versus Deribit — vanishes under execution</h3>
+<p>Ladders looked 1–3 vol points rich. Almost all of it was a stale-price artifact: pricing
+against an external spot instead of each ladder's own implied forward turns a $54 snapshot-timing
+gap into a 0.6σ "edge" on a contract 24 minutes from expiry. Re-centred on each ladder's own
+forward and required to survive a ±2 vol-point shift, the surviving edges are pennies.</p>
+</div></div>
+
+<div class="step"><span class="step-n">04</span><div>
+<h3>The clock is not flat — and this is where it opens up</h3>
+<p>Deribit's dailies expire 08:00Z. Polymarket settles 16:00Z. Kalshi settles 16:00Z and 21:00Z.
+Comparing them requires knowing how variance actually accrues through the day, and it does not
+accrue evenly.</p>
+</div></div>
+</div>
+</section>
+
+<figure>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>BTC</span>
+    <span><i style="background:var(--s2)"></i>ETH</span>
+  </div>
+  <div class="viz" id="fig1"></div>
+  <figcaption>Variance multiplier by hour of day, relative to the 24-hour mean. Two years of
+  hourly returns (17,519 per asset); shaded band is the 95% bootstrap interval for BTC. The two
+  assets are estimated independently and correlate at 0.95; BTC's split-half correlation across
+  the two years is 0.88. The 14:00Z peak is the US cash open; 04:00–11:00Z is the Asian night.
+  Deribit's daily options expire at 08:00Z — the bottom of the trough.</figcaption>
+</figure>
+
+<hr>
+
+<section class="col">
+<p class="eyebrow">The finding</p>
+<h2>Saturday realises a quarter of a weekday</h2>
+<p>The intraday profile has a much larger sibling. Measuring the <em>exact</em> window each
+contract settles on — 16:00Z on day D−1 to 16:00Z on day D — over two years gives 104
+independent observations per weekday, with no model in between.</p>
+</section>
+
+<figure>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>BTC</span>
+    <span><i style="background:var(--s2)"></i>ETH</span>
+  </div>
+  <div class="viz" id="fig2"></div>
+  <figcaption>Annualised realised volatility of the 16:00Z→16:00Z window, by the weekday it ends
+  on. Whiskers are 95% bootstrap intervals; n = 104–105 per bar. The Saturday and Sunday
+  intervals are disjoint from every weekday interval in both assets — BTC's Saturday window
+  realises 24.0% against roughly 48% midweek, which is 0.24× the variance.</figcaption>
+</figure>
+
+<div class="plates">
+  <div class="plate"><div class="k">BTC · Saturday window</div><div class="v cool">0.24×</div>
+    <div class="q">of midweek variance · 24.0% ann [19.0, 29.5]</div></div>
+  <div class="plate"><div class="k">BTC · Sunday window</div><div class="v cool">0.39×</div>
+    <div class="q">30.3% ann [23.9, 36.9]</div></div>
+  <div class="plate"><div class="k">ETH · Saturday window</div><div class="v cool">0.43×</div>
+    <div class="q">45.0% ann [35.6, 54.4]</div></div>
+  <div class="plate"><div class="k">ETH · Sunday window</div><div class="v cool">0.60×</div>
+    <div class="q">53.3% ann [42.4, 64.4]</div></div>
+</div>
+
+<section class="col">
+<h2>Nobody lists a weekend expiry</h2>
+<p>Deribit jumps from Friday 7 August straight to Friday 14 August. Kalshi's listings stop at
+Aug 5 00:00Z and Aug 7 21:00Z. Polymarket lists <strong>every day</strong>, including Saturday
+Aug 8 and Sunday Aug 9.</p>
+<p>So the weekend contracts are the only instruments in the entire three-venue universe exposed
+to Saturday and Sunday variance, and there is no listed options market anywhere that can
+discipline them. That is precisely the condition under which a mispricing survives.</p>
+</section>
+
+<hr>
+
+<section class="col">
+<p class="eyebrow">Construction</p>
+<h2>Deribit sets the level, history sets only the weekend shape</h2>
+<p>Each source is used only where it is strong. Total implied variance out to Deribit's last
+listed expiry — Friday 7 Aug 08:00Z, a liquid arbitraged point — is taken as given. It is then
+extended across the weekend using the directly measured variance of those exact clock windows,
+rescaled so a midweek window matches what Deribit itself charges.</p>
+<p>No assumption about the variance risk premium is required: the level comes from implied, not
+realised. The rescaling factor is <span class="num">0.66×</span> for BTC and
+<span class="num">0.52×</span> for ETH — Deribit currently implies well below the two-year
+realised average, consistent with the calm 30-day regime.</p>
+</section>
+
+<figure>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>Polymarket implied</span>
+    <span><i style="background:var(--s2)"></i>Fair (Deribit anchor + measured window)</span>
+  </div>
+  <div class="viz" id="fig3"></div>
+  <figcaption>Forward variance added by each day, i.e. the difference between consecutive daily
+  ladders. Bars are Polymarket's implied increment; the paired bar is the fair increment. The
+  Saturday→Sunday window is the outlier in both assets. Whiskers on the fair bars are the 95%
+  bootstrap interval of the historical window variance, carried through the same rescaling.</figcaption>
+</figure>
+
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Day added</th><th>Type</th><th>Market fwd var</th><th>Fair fwd var</th>
+<th>95% CI on fair</th><th>Market / fair</th><th>Signal</th>
+</tr></thead>
+<tbody id="tbl"></tbody>
+</table>
+</div>
+
+<div class="plates">
+  <div class="plate"><div class="k">BTC · Sat→Sun fwd variance</div><div class="v hot">1.97×</div>
+    <div class="q">market 3.28e−4 vs fair 1.67e−4, above the 97.5th percentile (2.47e−4)</div></div>
+  <div class="plate"><div class="k">ETH · Sat→Sun fwd variance</div><div class="v hot">2.46×</div>
+    <div class="q">market 9.95e−4 vs fair 4.04e−4, 1.7× the upper bound (5.89e−4)</div></div>
+  <div class="plate"><div class="k">BTC · Fri→Sat fwd variance</div><div class="v cool">0.15×</div>
+    <div class="q">market prices 1.6e−5 for a whole day — below the 2.5th percentile</div></div>
+  <div class="plate"><div class="k">ETH Aug-9 ATM vol</div><div class="v hot">47.4%</div>
+    <div class="q">against a fair 40.4% — 7.1 vol points rich</div></div>
+</div>
+
+<section class="col">
+<p>Two cross-checks matter. First, on every day Deribit <em>does</em> list an expiry,
+Polymarket's total implied variance runs 1.09–1.29× Deribit's — an ordinary retail premium,
+stable across six ladders and both assets. Second, the distortion is concentrated in the
+<em>increments</em>, not the totals: Polymarket's Aug-9 total variance is only 1.05× (BTC) and
+1.28× (ETH) fair, but it gets there by charging almost nothing for Saturday and roughly double
+for Sunday. The venue has close to the right amount of variance for the weekend as a whole and
+has distributed it across the two days almost backwards.</p>
+</section>
+
+<hr>
+
+<section class="col">
+<p class="eyebrow">The trade — and its binding constraint</p>
+<h2>The edge is real; taking it at market is not</h2>
+<p>Short the Sat→Sun forward variance: sell the Aug 9 ladder's variance and buy the Aug 8
+ladder's, in the ratio that leaves the position vega-neutral to everything before Saturday
+16:00Z. On a complete bucket ladder that is a weighted strip — buy bucket <em>i</em> with weight
+<code>ln(K_i/F)²</code> — whose expected payoff is exactly the contract's total variance.</p>
+<p>On BTC <strong>both legs earn</strong>: the Saturday increment is being given away at
+<span class="num">0.15×</span> fair while the Sunday increment is sold at
+<span class="num">1.97×</span>, so long-Aug-8 / short-Aug-9 collects on each side rather than
+paying away one to fund the other. On ETH the same short-Sunday leg pairs against a cheap
+Friday (<span class="num">0.49×</span>) instead.</p>
+</section>
+
+<div class="callout">
+<p><strong>Then the books bite.</strong> The BTC Aug-9 variance strip costs
+<span class="num">0.0051</span> to buy and fetches <span class="num">0.0022</span> to sell — a
+40% half-spread on the very object being traded. ETH's weekend buckets quote 6–8¢ wide on
+values of 20–40¢. A 2.0–2.5× variance mispricing worth ~4¢ on the body bucket does not clear
+that in a single crossing trade.</p>
+</div>
+
+<section class="col">
+<p>Which dictates the implementation. Polymarket charges no maker fee, so the edge is harvested
+by <strong>posting</strong>, not crossing: resting bids on the Aug-9 body buckets and offers on
+its wings, inside a 6–8¢ touch, on the side the model favours. Filled at mid, the ETH Aug-9
+1,800–1,900 bucket is worth <span class="num">0.409</span> against a
+<span class="num">0.330 / 0.410</span> market — roughly <span class="num">4¢</span> of edge on
+~3,000 contracts of resting size per bucket. The same structure re-lists every single week.</p>
+
+<h3>What would break it</h3>
+<ul>
+<li><strong>Regime, not shape.</strong> The level is anchored on Deribit, but the weekend
+<em>shape</em> is historical. A scheduled weekend event — an exchange failure, a governance
+vote, a macro shock landing Friday night — is exactly what the historical average cannot see.</li>
+<li><strong>Thin books cut both ways.</strong> $2,790 of lifetime volume on the BTC Aug-9 range
+ladder means fills are slow and a resting order can sit through a real move.</li>
+<li><strong>Fit noise.</strong> Forward variance is a difference of two fitted quantities on
+coarse 2,000-wide ladders. The bootstrap resamples each quote inside its own bid/ask and the
+signal survives, but the point estimates are not precise to the last digit.</li>
+<li><strong>The peg is the residual, not zero.</strong> Any Kalshi-versus-Polymarket leg carries
+the USDT basis: currently <span class="num">−10.5 bp</span>, two-year mean
+<span class="num">−9.2 bp</span>, and a 5-day change with a standard deviation of ~2.4 bp
+(≈ $15 on BTC). Small, mean-reverting, but not nothing.</li>
+</ul>
+</section>
+
+<hr>
+
+<section class="col">
+<h2>Ladder-implied vol, all venues, one clock</h2>
+<p>For reference — every quoted ladder fitted with the same skewed parametric form, so
+<span class="num">σ<sub>ATM</sub></span> means the same thing on all three venues. Fitted
+forwards land within $50 of the USD composite everywhere, which is the end-to-end check on the
+peg correction and the whole pipeline.</p>
+</section>
+
+<div class="scroll">
+<table>
+<thead><tr><th>Venue</th><th>Event</th><th>Cal h</th><th>Biz h</th><th>Implied F</th>
+<th>σ<sub>ATM</sub></th><th>Deribit ref</th><th>Gap</th><th>Skew</th></tr></thead>
+<tbody id="tbl2"></tbody>
+</table>
+</div>
+
+<p class="col" style="color:var(--muted);font-size:13px;margin-top:34px;">
+Snapshot <span class="num" id="snap2"></span>. Figures are point-in-time and go stale quickly;
+the weekend structure recurs, the specific numbers do not. Research only — not investment advice.
+</p>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script id="data" type="application/json">{"snapshot":"2026-08-03 15:36 UTC","counts":{"kalshi_markets":34840,"kalshi_quoted":1416,"kalshi_events":152,"kalshi_books":147,"poly_events":24,"poly_markets":264,"poly_books":264,"der_options":1518,"der_futures":26,"der_depth":494,"hist_bars":51221},"peg":{"BTC":-10.47,"ETH":-11.03},"intraday":{"BTC":[1.065,1.289,0.836,0.707,0.522,0.534,0.791,0.609,0.599,0.565,0.515,0.522,0.687,1.738,2.444,2.121,1.243,1.535,1.161,1.052,0.918,0.914,0.987,0.645],"ETH":[1.078,1.663,0.736,0.677,0.502,0.687,0.739,0.699,0.678,0.582,0.53,0.627,0.776,1.474,1.961,1.858,1.382,1.575,1.082,0.997,1.039,1.029,1.056,0.572],"BTC_lo":[0.729,1.024,0.678,0.577,0.422,0.428,0.522,0.504,0.492,0.471,0.422,0.431,0.558,1.394,2.082,1.802,1.007,1.225,0.944,0.876,0.769,0.75,0.795,0.539],"BTC_hi":[1.452,1.67,1.042,0.875,0.624,0.657,1.164,0.73,0.733,0.676,0.652,0.634,0.846,2.154,2.875,2.436,1.535,1.883,1.393,1.248,1.079,1.117,1.17,0.771]},"dow":{"BTC":{"Mon":{"vol":47.78,"lo":39.58,"hi":55.88,"n":104},"Tue":{"vol":50.74,"lo":43.18,"hi":58.38,"n":104},"Wed":{"vol":47.85,"lo":40.87,"hi":54.66,"n":104},"Thu":{"vol":47.37,"lo":40.58,"hi":54.24,"n":104},"Fri":{"vol":43.01,"lo":37.81,"hi":48.03,"n":104},"Sat":{"vol":24.0,"lo":19.01,"hi":29.52,"n":104},"Sun":{"vol":30.34,"lo":23.88,"hi":36.91,"n":105}},"ETH":{"Mon":{"vol":75.85,"lo":61.13,"hi":90.19,"n":104},"Tue":{"vol":70.73,"lo":60.02,"hi":81.53,"n":104},"Wed":{"vol":67.58,"lo":58.63,"hi":75.88,"n":104},"Thu":{"vol":68.59,"lo":58.67,"hi":78.41,"n":104},"Fri":{"vol":68.04,"lo":56.54,"hi":79.46,"n":104},"Sat":{"vol":45.01,"lo":35.57,"hi":54.42,"n":104},"Sun":{"vol":53.31,"lo":42.38,"hi":64.38,"n":105}}},"rv":[{"venue":"kalshi","asset":"BTC","name":"KXBTCD-26AUG0312","cal_h":0.3865383333333333,"tau_h":1.1285210986438292,"sigma_atm":0.22181771467933717,"ref_sigma":0.24917724483804307,"vol_gap":-0.027359530158705903,"fit_F":63679.16379950421,"skew":-0.0018111910717256215},{"venue":"kalshi","asset":"BTC","name":"KXBTCD-26AUG0317","cal_h":5.386538333333333,"tau_h":10.790612131717111,"sigma_atm":0.2481869265739394,"ref_sigma":0.24917724483804304,"vol_gap":-0.0009903182641036457,"fit_F":63653.689202839705,"skew":0.008646252480609583},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-4-2026","cal_h":24.386538333333334,"tau_h":32.44578856252639,"sigma_atm":0.28225472033798693,"ref_sigma":0.2517948643639274,"vol_gap":0.030459855974059535,"fit_F":63656.804477722704,"skew":-0.0012121265350056947},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-5-2026","cal_h":48.386538333333334,"tau_h":58.8152293640692,"sigma_atm":0.28093560332088613,"ref_sigma":0.25883526739395624,"vol_gap":0.022100335926929893,"fit_F":63746.527653600344,"skew":0.005916358834664283},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-6-2026","cal_h":72.38653833333333,"tau_h":85.16921201149128,"sigma_atm":0.27593111064329107,"ref_sigma":0.27910072195857555,"vol_gap":-0.003169611315284482,"fit_F":63687.734340794545,"skew":0.013554632764532025},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-7-2026","cal_h":96.38653833333333,"tau_h":112.96436581222382,"sigma_atm":0.3118743447370923,"ref_sigma":0.29686914897276423,"vol_gap":0.015005195764328072,"fit_F":63763.19210779288,"skew":0.01765188768959757},{"venue":"kalshi","asset":"BTC","name":"KXBTCD-26AUG0717","cal_h":101.38653833333333,"tau_h":120.4473603827691,"sigma_atm":0.3091028954141728,"ref_sigma":0.29691428862417757,"vol_gap":0.012188606789995227,"fit_F":63636.89123149035,"skew":0.029561987263838525},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-8-2026","cal_h":120.38653833333333,"tau_h":128.41959665600464,"sigma_atm":0.2943480013941135,"ref_sigma":0.29695658558398913,"vol_gap":-0.00260858418987564,"fit_F":63687.46755590709,"skew":0.015218722252661493},{"venue":"polymarket","asset":"BTC","name":"bitcoin-above-on-august-9-2026","cal_h":144.38653833333333,"tau_h":140.72800948590972,"sigma_atm":0.31546116435921817,"ref_sigma":0.29701246810566434,"vol_gap":0.01844869625355383,"fit_F":63615.05405421377,"skew":0.02553210035231605},{"venue":"kalshi","asset":"ETH","name":"KXETHD-26AUG0312","cal_h":0.3865383333333333,"tau_h":1.1285210986438292,"sigma_atm":0.2659037042887938,"ref_sigma":0.37090987491666855,"vol_gap":-0.10500617062787476,"fit_F":1861.7390958449225,"skew":-0.003209027333917274},{"venue":"kalshi","asset":"ETH","name":"KXETHD-26AUG0317","cal_h":5.386538333333333,"tau_h":10.790612131717111,"sigma_atm":0.3277835297192927,"ref_sigma":0.3709098749166685,"vol_gap":-0.04312634519737579,"fit_F":1861.4538149189482,"skew":0.015083763801526106},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-4-2026","cal_h":24.386538333333334,"tau_h":32.44578856252639,"sigma_atm":0.3889765906327777,"ref_sigma":0.3726769154461889,"vol_gap":0.016299675186588758,"fit_F":1860.6305702847815,"skew":0.03687516003179753},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-5-2026","cal_h":48.386538333333334,"tau_h":58.8152293640692,"sigma_atm":0.42036493814689896,"ref_sigma":0.3797394442945514,"vol_gap":0.04062549385234754,"fit_F":1862.8817539781098,"skew":0.005787578873016193},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-6-2026","cal_h":72.38653833333333,"tau_h":85.16921201149128,"sigma_atm":0.4323128980288609,"ref_sigma":0.3964019905274469,"vol_gap":0.03591090750141401,"fit_F":1861.7502492586561,"skew":0.0198881610756996},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-7-2026","cal_h":96.38653833333333,"tau_h":112.96436581222382,"sigma_atm":0.40724292744267054,"ref_sigma":0.40765523151619687,"vol_gap":-0.00041230407352632614,"fit_F":1861.800256284813,"skew":0.015958484165837672},{"venue":"kalshi","asset":"ETH","name":"KXETHD-26AUG0717","cal_h":101.38653833333333,"tau_h":120.4473603827691,"sigma_atm":0.46510082723338647,"ref_sigma":0.4067796824704106,"vol_gap":0.058321144762975896,"fit_F":1860.0628903444053,"skew":0.03491984545230043},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-8-2026","cal_h":120.38653833333333,"tau_h":128.41959665600464,"sigma_atm":0.42280386225199734,"ref_sigma":0.40595743666762507,"vol_gap":0.01684642558437227,"fit_F":1866.864893353042,"skew":0.005829266973506044},{"venue":"polymarket","asset":"ETH","name":"ethereum-above-on-august-9-2026","cal_h":144.38653833333333,"tau_h":140.72800948590972,"sigma_atm":0.4744410165530868,"ref_sigma":0.4048683489914169,"vol_gap":0.06957266756166991,"fit_F":1860.7657430027693,"skew":0.013275160830578716}],"con":{"BTC":{"lambda":0.6620844773256315,"rows":[{"label":"Wed 5","dow":"Wed","day":5,"mkt":0.00023466789427208426,"fair":0.00041495088885751106,"lo":0.0003027607128908873,"hi":0.0005416250357727011,"ratio":0.5655317305577968},{"label":"Thu 6","dow":"Thu","day":6,"mkt":0.00021020198305892574,"fair":0.00040668401024868285,"lo":0.0002985395368255048,"hi":0.0005331990250939116,"ratio":0.5168680788074002},{"label":"Fri 7","dow":"Fri","day":7,"mkt":0.000513681955765066,"fair":0.00033528819138766623,"lo":0.0002591974982949227,"hi":0.00041811394001022045,"ratio":1.5320609820437658},{"label":"Sat 8","dow":"Sat","day":8,"mkt":1.583641869046205e-05,"fair":0.00010437511258406829,"lo":6.550816527344404e-05,"hi":0.0001579409996272446,"ratio":0.1517260034350306},{"label":"Sun 9","dow":"Sun","day":9,"mkt":0.00032834625054306696,"fair":0.00016684088219122707,"lo":0.00010335213046941893,"hi":0.00024695162719260083,"ratio":1.968020345077822}],"tot8":0.0012692641621750529,"tot9":0.0015976104127181198,"fair8":0.001357802856068659,"fair9":0.0015246437382598862},"ETH":{"lambda":0.5194164086886977,"rows":[{"label":"Wed 5","dow":"Wed","day":5,"mkt":0.0006255881492109814,"fair":0.0006495392649082585,"lo":0.0004888969591242183,"hi":0.0008188977081458526,"ratio":0.9631259925438688},{"label":"Thu 6","dow":"Thu","day":6,"mkt":0.000630231388467344,"fair":0.0006689500730555027,"lo":0.0004895757428527186,"hi":0.0008742372300901484,"ratio":0.9421202177147439},{"label":"Fri 7","dow":"Fri","day":7,"mkt":0.00032136966311753935,"fair":0.0006582762607155625,"lo":0.00045459977438022485,"hi":0.000897817861893804,"ratio":0.4881987735182834},{"label":"Sat 8","dow":"Sat","day":8,"mkt":0.00048162299300387934,"fair":0.000288036230887386,"lo":0.00017992054096171664,"hi":0.0004212238470052366,"ratio":1.6720917070747958},{"label":"Sun 9","dow":"Sun","day":9,"mkt":0.0009947962303080917,"fair":0.00040407596603959234,"lo":0.0002553641364921343,"hi":0.0005893429491025966,"ratio":2.4619039831995826}],"tot8":0.002618832530364337,"tot9":0.0036136287606724285,"fair8":0.0024252457682478433,"fair9":0.0028293217342874356}}}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const tip = document.getElementById('tip');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, a = {}) => { const e = document.createElementNS(NS, n);
+  for (const k in a) e.setAttribute(k, a[k]); return e; };
+const cs = () => getComputedStyle(document.documentElement);
+const C = k => cs().getPropertyValue(k).trim();
+
+document.getElementById('snap').textContent = D.snapshot;
+document.getElementById('snap2').textContent = D.snapshot;
+document.getElementById('c1').textContent =
+  (D.counts.kalshi_quoted + D.counts.poly_markets + D.counts.der_options + D.counts.der_futures).toLocaleString();
+document.getElementById('c2').textContent =
+  (D.counts.kalshi_books + D.counts.poly_books + D.counts.der_depth).toLocaleString();
+document.getElementById('c3').textContent = D.counts.hist_bars.toLocaleString();
+document.getElementById('pegbtc').textContent = D.peg.BTC.toFixed(2) + ' bp';
+
+function showTip(e, txt) {
+  tip.textContent = txt; tip.style.opacity = 1;
+  const pad = 14;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+const hideTip = () => tip.style.opacity = 0;
+
+/* ---------- fig 1 : intraday variance profile (2 series, line) ---------- */
+function fig1() {
+  const host = document.getElementById('fig1'); host.textContent = '';
+  const W = host.clientWidth || 760, H = 300;
+  const m = { t: 14, r: 16, b: 34, l: 44 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H,
+    role: 'img', 'aria-label': 'Variance multiplier by hour of day for BTC and ETH' });
+  const g = el('g', { transform: `translate(${m.l},${m.t})` });
+  const yMax = 3.2;
+  const X = h => (h / 23) * iw, Y = v => ih - (v / yMax) * ih;
+
+  for (let v = 0; v <= 3; v++) {
+    g.appendChild(el('line', { x1: 0, x2: iw, y1: Y(v), y2: Y(v),
+      stroke: v === 1 ? C('--rule') : C('--grid'), 'stroke-width': 1,
+      'stroke-dasharray': v === 1 ? '' : '2 3' }));
+    const t = el('text', { x: -10, y: Y(v) + 4, 'text-anchor': 'end',
+      fill: C('--muted'), 'font-size': 11, 'font-family': C('--mono') });
+    t.textContent = v + '×'; g.appendChild(t);
+  }
+  // BTC bootstrap band
+  const band = el('path', { fill: C('--s1'), opacity: .13, stroke: 'none' });
+  let d = '';
+  D.intraday.BTC_hi.forEach((v, h) => d += (h ? 'L' : 'M') + X(h) + ',' + Y(v));
+  for (let h = 23; h >= 0; h--) d += 'L' + X(h) + ',' + Y(D.intraday.BTC_lo[h]);
+  band.setAttribute('d', d + 'Z'); g.appendChild(band);
+
+  [['BTC', '--s1'], ['ETH', '--s2']].forEach(([k, c]) => {
+    let p = '';
+    D.intraday[k].forEach((v, h) => p += (h ? 'L' : 'M') + X(h) + ',' + Y(v));
+    g.appendChild(el('path', { d: p, fill: 'none', stroke: C(c), 'stroke-width': 2,
+      'stroke-linejoin': 'round' }));
+  });
+  // peak marker + direct label
+  const pk = D.intraday.BTC.indexOf(Math.max(...D.intraday.BTC));
+  g.appendChild(el('circle', { cx: X(pk), cy: Y(D.intraday.BTC[pk]), r: 4.5,
+    fill: C('--s1'), stroke: C('--panel'), 'stroke-width': 2 }));
+  const lb = el('text', { x: X(pk), y: Y(D.intraday.BTC[pk]) - 12, 'text-anchor': 'middle',
+    fill: C('--ink-2'), 'font-size': 11.5, 'font-family': C('--mono'), 'font-weight': 600 });
+  lb.textContent = D.intraday.BTC[pk].toFixed(2) + '× @ 14Z'; g.appendChild(lb);
+
+  // Deribit 08:00Z marker
+  g.appendChild(el('line', { x1: X(8), x2: X(8), y1: 0, y2: ih, stroke: C('--accent'),
+    'stroke-width': 1.5, 'stroke-dasharray': '4 3' }));
+  const dl = el('text', { x: X(8) + 6, y: 13, fill: C('--accent'), 'font-size': 10.5,
+    'font-family': C('--mono'), 'letter-spacing': '.06em' });
+  dl.textContent = 'DERIBIT EXPIRY 08Z'; g.appendChild(dl);
+
+  for (let h = 0; h <= 23; h += 4) {
+    const t = el('text', { x: X(h), y: ih + 22, 'text-anchor': 'middle', fill: C('--muted'),
+      'font-size': 11, 'font-family': C('--mono') });
+    t.textContent = String(h).padStart(2, '0') + 'Z'; g.appendChild(t);
+  }
+  // hover crosshair
+  const cr = el('line', { y1: 0, y2: ih, stroke: C('--muted'), 'stroke-width': 1, opacity: 0 });
+  g.appendChild(cr);
+  const hit = el('rect', { x: 0, y: 0, width: iw, height: ih, fill: 'transparent' });
+  hit.addEventListener('mousemove', e => {
+    const bb = hit.getBoundingClientRect();
+    const h = Math.round(((e.clientX - bb.left) / bb.width) * 23);
+    cr.setAttribute('x1', X(h)); cr.setAttribute('x2', X(h)); cr.setAttribute('opacity', .5);
+    showTip(e, `${String(h).padStart(2,'0')}:00 UTC\nBTC  ${D.intraday.BTC[h].toFixed(2)}×\nETH  ${D.intraday.ETH[h].toFixed(2)}×`);
+  });
+  hit.addEventListener('mouseleave', () => { cr.setAttribute('opacity', 0); hideTip(); });
+  g.appendChild(hit);
+  svg.appendChild(g); host.appendChild(svg);
+}
+
+/* ---------- fig 2 : realised vol by weekday, grouped bars + CI ---------- */
+function fig2() {
+  const host = document.getElementById('fig2'); host.textContent = '';
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const W = host.clientWidth || 760, H = 320;
+  const m = { t: 14, r: 16, b: 40, l: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H,
+    role: 'img', 'aria-label': 'Realised volatility of the contract window by weekday' });
+  const g = el('g', { transform: `translate(${m.l},${m.t})` });
+  const yMax = 95, Y = v => ih - (v / yMax) * ih;
+  const bw = iw / days.length, gap = 2, bar = (bw - 16 - gap) / 2;
+
+  for (let v = 0; v <= 90; v += 30) {
+    g.appendChild(el('line', { x1: 0, x2: iw, y1: Y(v), y2: Y(v), stroke: C('--grid'),
+      'stroke-width': 1, 'stroke-dasharray': v ? '2 3' : '' }));
+    const t = el('text', { x: -10, y: Y(v) + 4, 'text-anchor': 'end', fill: C('--muted'),
+      'font-size': 11, 'font-family': C('--mono') });
+    t.textContent = v + '%'; g.appendChild(t);
+  }
+  days.forEach((d, i) => {
+    const x0 = i * bw + 8;
+    [['BTC', '--s1', 0], ['ETH', '--s2', 1]].forEach(([k, c, j]) => {
+      const s = D.dow[k][d];
+      const x = x0 + j * (bar + gap);
+      const r = el('rect', { x, y: Y(s.vol), width: bar, height: ih - Y(s.vol),
+        fill: C(c), rx: 4, ry: 4, opacity: (d === 'Sat' || d === 'Sun') ? 1 : .55 });
+      r.addEventListener('mousemove', e => showTip(e,
+        `${k} · window ends ${d}\n${s.vol.toFixed(2)}% ann\n95% CI [${s.lo.toFixed(1)}, ${s.hi.toFixed(1)}]\nn = ${s.n}`));
+      r.addEventListener('mouseleave', hideTip);
+      g.appendChild(r);
+      const cx = x + bar / 2;
+      g.appendChild(el('line', { x1: cx, x2: cx, y1: Y(s.lo), y2: Y(s.hi),
+        stroke: C('--ink'), 'stroke-width': 1.5, opacity: .55 }));
+      g.appendChild(el('line', { x1: cx - 4, x2: cx + 4, y1: Y(s.hi), y2: Y(s.hi),
+        stroke: C('--ink'), 'stroke-width': 1.5, opacity: .55 }));
+      g.appendChild(el('line', { x1: cx - 4, x2: cx + 4, y1: Y(s.lo), y2: Y(s.lo),
+        stroke: C('--ink'), 'stroke-width': 1.5, opacity: .55 }));
+    });
+    const t = el('text', { x: x0 + bar + gap / 2, y: ih + 22, 'text-anchor': 'middle',
+      fill: (d === 'Sat' || d === 'Sun') ? C('--ink') : C('--muted'), 'font-size': 11.5,
+      'font-family': C('--mono'), 'font-weight': (d === 'Sat' || d === 'Sun') ? 650 : 400 });
+    t.textContent = d; g.appendChild(t);
+  });
+  // direct labels on the weekend bars only
+  ['Sat','Sun'].forEach(d => {
+    const i = days.indexOf(d), s = D.dow.BTC[d];
+    const t = el('text', { x: i * bw + 8 + bar / 2, y: Y(s.hi) - 8, 'text-anchor': 'middle',
+      fill: C('--s1'), 'font-size': 11.5, 'font-family': C('--mono'), 'font-weight': 650 });
+    t.textContent = s.vol.toFixed(1) + '%'; g.appendChild(t);
+  });
+  svg.appendChild(g); host.appendChild(svg);
+}
+
+/* ---------- fig 3 : forward variance, implied vs fair (small multiples) ---------- */
+const FWD = {};
+['BTC','ETH'].forEach(a => FWD[a] = D.con[a].rows.map(r =>
+  [r.label, r.dow, r.mkt, r.fair, r.lo, r.hi, r.ratio]));
+function fig3() {
+  const host = document.getElementById('fig3'); host.textContent = '';
+  const wide = (host.clientWidth || 760) > 620;
+  host.style.display = 'grid';
+  host.style.gridTemplateColumns = wide ? '1fr 1fr' : '1fr';
+  host.style.gap = '20px';
+  ['BTC','ETH'].forEach(asset => {
+    const box = document.createElement('div');
+    const cap = document.createElement('div');
+    cap.style.cssText = `font-family:${C('--mono')};font-size:11px;letter-spacing:.1em;color:${C('--muted')};margin-bottom:6px;`;
+    cap.textContent = asset + '   ·   forward variance ×10⁻⁴';
+    box.appendChild(cap);
+    const W = wide ? (host.clientWidth - 20) / 2 : host.clientWidth, H = 250;
+    const m = { t: 16, r: 10, b: 34, l: 52 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H,
+      role: 'img', 'aria-label': `${asset} forward variance, implied versus fair` });
+    const g = el('g', { transform: `translate(${m.l},${m.t})` });
+    const rows = FWD[asset];
+    const yMax = Math.max(...rows.flatMap(r => [r[2], r[3], r[5] || 0])) * 1.18;
+    const Y = v => ih - (Math.max(v, 0) / yMax) * ih;
+    const bw = iw / rows.length, gap = 2, bar = (bw - 14 - gap) / 2;
+    for (let i = 0; i <= 4; i++) {
+      const v = yMax * i / 4;
+      g.appendChild(el('line', { x1: 0, x2: iw, y1: Y(v), y2: Y(v), stroke: C('--grid'),
+        'stroke-width': 1, 'stroke-dasharray': i ? '2 3' : '' }));
+      const t = el('text', { x: -8, y: Y(v) + 4, 'text-anchor': 'end', fill: C('--muted'),
+        'font-size': 10, 'font-family': C('--mono') });
+      t.textContent = (v * 1e4).toFixed(1); g.appendChild(t);
+    }
+    rows.forEach((r, i) => {
+      const x0 = i * bw + 7;
+      [[r[2], '--s1', 0, 'implied'], [r[3], '--s2', 1, 'fair']].forEach(([v, c, j, nm]) => {
+        const x = x0 + j * (bar + gap);
+        const rect = el('rect', { x, y: Y(v), width: bar, height: Math.max(ih - Y(v), 1),
+          fill: C(c), rx: 4, ry: 4, opacity: r[1] === 'Sun' ? 1 : .6 });
+        rect.addEventListener('mousemove', e => showTip(e,
+          `${asset} · ${r[0]} (${r[1]})\n${nm} fwd var  ${(v*1e4).toFixed(2)}e−4`));
+        rect.addEventListener('mouseleave', hideTip);
+        g.appendChild(rect);
+        if (j === 1) {
+          const cx = x + bar / 2;
+          g.appendChild(el('line', { x1: cx, x2: cx, y1: Y(r[4]), y2: Y(r[5]),
+            stroke: C('--ink'), 'stroke-width': 1.4, opacity: .5 }));
+          [r[4], r[5]].forEach(v => g.appendChild(el('line', {
+            x1: cx - 3.5, x2: cx + 3.5, y1: Y(v), y2: Y(v),
+            stroke: C('--ink'), 'stroke-width': 1.4, opacity: .5 })));
+        }
+      });
+      const t = el('text', { x: x0 + bar + gap / 2, y: ih + 20, 'text-anchor': 'middle',
+        fill: r[1] === 'Sun' ? C('--ink') : C('--muted'), 'font-size': 10.5,
+        'font-family': C('--mono'), 'font-weight': r[1] === 'Sun' ? 650 : 400 });
+      t.textContent = r[0]; g.appendChild(t);
+    });
+    // direct label on the Sunday ratio
+    const sun = rows[4], i = 4, x0 = i * bw + 7;
+    const lab = el('text', { x: x0 + bar / 2, y: Y(sun[2]) - 7, 'text-anchor': 'middle',
+      fill: C('--s1'), 'font-size': 11.5, 'font-family': C('--mono'), 'font-weight': 650 });
+    lab.textContent = (sun[2] / sun[3]).toFixed(2) + '×'; g.appendChild(lab);
+    svg.appendChild(g); box.appendChild(svg); host.appendChild(box);
+  });
+}
+
+/* ---------- tables ---------- */
+function tables() {
+  const tb = document.getElementById('tbl');
+  const e4 = v => (v * 1e4).toFixed(2) + 'e−4';
+  const out = [];
+  ['BTC','ETH'].forEach(a => {
+    const c = D.con[a];
+    c.rows.forEach(r => {
+      const rich = r.mkt > r.hi, cheap = r.mkt < r.lo;
+      out.push(`<tr>
+        <td>${a} · ${r.label}</td>
+        <td>${r.dow === 'Sat' || r.dow === 'Sun' ? '<strong>weekend</strong>' : 'weekday'}</td>
+        <td>${e4(r.mkt)}</td><td>${e4(r.fair)}</td>
+        <td>[${e4(r.lo)}, ${e4(r.hi)}]</td>
+        <td class="${rich ? 'hot' : (cheap ? 'cool' : '')}">${r.ratio.toFixed(2)}×</td>
+        <td>${rich ? '<span class="tag sell">sell variance</span>'
+              : (cheap ? '<span class="tag buy">buy variance</span>'
+                       : '<span class="tag ok">within CI</span>')}</td></tr>`);
+    });
+  });
+  tb.innerHTML = out.join('');
+
+  const t2 = document.getElementById('tbl2');
+  t2.innerHTML = D.rv.filter(r => r.cal_h > 1).map(r => {
+    const gap = r.vol_gap == null ? null : r.vol_gap * 100;
+    const cls = gap == null ? '' : (gap > 1.5 ? ' class="hot"' : (gap < -1.5 ? ' class="cool"' : ''));
+    return `<tr><td>${r.venue}</td><td>${r.name}</td>
+      <td>${r.cal_h.toFixed(1)}</td><td>${r.tau_h.toFixed(1)}</td>
+      <td>${r.fit_F.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td>${(r.sigma_atm*100).toFixed(2)}%</td>
+      <td>${r.ref_sigma ? (r.ref_sigma*100).toFixed(2)+'%' : '—'}</td>
+      <td${cls}>${gap == null ? '—' : (gap>0?'+':'')+gap.toFixed(2)+'%'}</td>
+      <td>${(r.skew*100).toFixed(2)}%</td></tr>`;
+  }).join('');
+}
+
+function draw() { fig1(); fig2(); fig3(); }
+tables(); draw();
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(draw, 140); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+new MutationObserver(draw).observe(document.documentElement,
+  { attributes: true, attributeFilter: ['data-theme'] });
+</script>
