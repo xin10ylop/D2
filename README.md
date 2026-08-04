@@ -173,3 +173,64 @@ That is the honest shape of this universe: the venues are efficient wherever
 there is size, and mispriced only where there is not. Kalshi's BTC digital
 ladder trades 2 million contracts a day at a one-cent spread; the ladder with
 a 40-point mispricing trades a few hundred contracts a week.
+
+---
+
+# The bot: `bot/arb_bot.py`
+
+Automated scan → size → execute → mark → exit → recycle on the locked-pair
+strategy. Paper by default; live needs `BOT_MODE=live` and `KALSHI_LIVE=yes`.
+
+```
+cd bot
+python3 arb_bot.py --capital 1000 --cycles 1          # one scan, paper
+python3 arb_bot.py --capital 1000 --cycles 0 --sleep 300   # run continuously
+```
+
+State persists in `bot/positions.json`, so it survives restarts and never
+double-books depth it has already committed.
+
+## Mechanics it enforces
+
+| | |
+|---|---|
+| **Entry** | far window must strictly contain the near window; barrier ordering must hold; both legs walked level-by-level while the pair still costs under $1 after fees |
+| **Sizing** | capped by book depth, free capital, and `--max-per-pair`; depth consumed by open positions *and* by earlier pairs in the same cycle is deducted |
+| **Execution** | fill-or-kill both legs; if the far leg fails the near leg is unwound immediately — a naked short barrier is the only genuinely dangerous state |
+| **Marking** | every position is re-marked against the live book each cycle |
+| **Exit** | closes early only when unwinding banks ≥80% of the locked edge; otherwise holds |
+| **Recycling** | freed capital is redeployed to the highest edge-per-contract pair available |
+
+## On selling before expiry
+
+Contracts do trade continuously, and the bot marks and can exit at any time.
+But on these books the round trip is expensive — measured live:
+
+```
+KXBNBMAXMON-65000  NO   buy 0.689 / sell 0.609   round-trip  8.0c
+KXBNBMAXY-65000    YES  buy 0.180 / sell 0.123   round-trip  5.7c
+                                        total  ~14c per pair
+```
+
+against a locked edge of ~10c. **Early exit cannot be manufactured by
+crossing the spread** — it only pays if the dislocation genuinely converges.
+And the quote history says it does not converge quickly: the edge has been
+open in 95-98% of hours since the monthly contract was issued.
+
+So the base case is a hold to the near leg's close (28 days), with early exit
+as opportunistic upside. Selling early is a risk-management option here, not a
+capital-velocity multiplier.
+
+## Sizing, all three strategies
+
+| | ① Locked pairs | ② BNB annual ladder | ③ Polymarket ETH MM |
+|---|---|---|---|
+| Risk | none at settlement | full capital | inventory |
+| Bankroll | **$573** | $603 | ~$92,000 |
+| Min ticket | $0.90 | $0.17 | $1 |
+| Max deployable | $573 (620 pairs) | $603 | flow-capped |
+| Min profit | **+$47.36 guaranteed** | — | — |
+| Expected | $47–$667 | +$587 | ~$16/day |
+| Worst case | +$47.36 | **−$603 (total)** | gap risk |
+| Horizon | 28d guaranteed | to 31 Dec | continuous |
+| Annualised (min) | **184%** | n/a | n/a |

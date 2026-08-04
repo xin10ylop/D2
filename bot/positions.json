@@ -1,0 +1,42 @@
+{
+ "open": [
+  {
+   "label": "BNB up KXBNBMAXMON@650 / KXBNBMAXY@650",
+   "coin": "BNB",
+   "sell_ticker": "KXBNBMAXMON-BNB-26AUG31-65000",
+   "buy_ticker": "KXBNBMAXY-BNB-26DEC31-65000",
+   "qty": 220,
+   "capital": 198.78000000000003,
+   "edge": 21.219999999999985,
+   "near_close": 1788235199000.0,
+   "far_close": 1798779599000.0,
+   "opened": 1785835348.7561061
+  },
+  {
+   "label": "BNB up KXBNBMAXMON@640 / KXBNBMAXY@640",
+   "coin": "BNB",
+   "sell_ticker": "KXBNBMAXMON-BNB-26AUG31-64000",
+   "buy_ticker": "KXBNBMAXY-BNB-26DEC31-64000",
+   "qty": 200,
+   "capital": 182.9,
+   "edge": 17.1,
+   "near_close": 1788235199000.0,
+   "far_close": 1798779599000.0,
+   "opened": 1785835348.7565262
+  },
+  {
+   "label": "BNB up KXBNBMAXMON@660 / KXBNBMAXY@660",
+   "coin": "BNB",
+   "sell_ticker": "KXBNBMAXMON-BNB-26AUG31-66000",
+   "buy_ticker": "KXBNBMAXY-BNB-26DEC31-66000",
+   "qty": 200,
+   "capital": 190.96,
+   "edge": 9.04,
+   "near_close": 1788235199000.0,
+   "far_close": 1798779599000.0,
+   "opened": 1785835348.7569425
+  }
+ ],
+ "closed": [],
+ "realised": 0.0
+}
