@@ -267,3 +267,51 @@ barrier by barrier, is -0.2c to -4.2c -- Polymarket sits consistently just
 above Kalshi, which is what the USDT peg predicts. And the windows do not
 actually nest (Polymarket's August window opens ~1 hour later than Kalshi's),
 so the implication would not hold even if the prices were favourable.
+
+---
+
+# Both venues, head to head
+
+`src/polyflow.py` measures Polymarket's actual trade tape; `src/mmflow.py`
+joins it to live quotes. Two errors in the earlier pass had to be fixed first:
+
+1. **Flow was understated ~450x.** Gamma's `volumeNum` is roughly one day's
+   volume, not lifetime. Real flow across Polymarket's crypto ladders is
+   **2.65M contracts / $1.17M notional per day**.
+2. **Spread was overstated ~20x.** Taking a median across a ladder counts the
+   wing buckets, which quote 9-39c wide on contracts worth 2-5c and never
+   trade. Weighting each contract's spread by the volume that actually crossed
+   on it is the honest statistic.
+
+## Flow-weighted market-making economics (measured, 24h)
+
+| family | contracts/day | median spr | **flow-weighted** | net/ct | $/month |
+|---|---|---|---|---|---|
+| ETH range | 27,071 | 78.5c | **3.9c** | +0.36c | **+$440** |
+| BTC range | 102,513 | 1.6c | 0.9c | −0.69c | −$3,180 |
+| ETH above | 245,227 | 2.0c | 0.8c | −0.71c | −$7,849 |
+| BTC above | 993,832 | 1.0c | **0.3c** | −0.90c | −$40,069 |
+| BTC hit | 711,263 | 0.6c | 0.6c | −0.78c | −$24,869 |
+
+Where the volume is, the flow-weighted spread is **0.3c**. Quoting it loses
+money on every fill. The same inverse relationship as Kalshi, only sharper:
+the busiest book on either venue is the least profitable to quote.
+
+## The answer
+
+| | Kalshi locked pairs | Polymarket ETH-range MM |
+|---|---|---|
+| Capital | $573 | ~$1,400 |
+| Profit | **$47/mo floor, $252 expected** | ~$440/mo |
+| Risk | **none at settlement** | inventory; a gap is a real loss |
+| Confidence | arithmetic on live quotes | assumes a 15% fill share, unmeasured |
+| Capacity | hard-capped by depth | capped by flow |
+
+Polymarket wins on raw dollars (~$440/mo vs ~$47/mo floor), on ~2.4x the
+capital, with real risk and a fill rate that is still an assumption. Kalshi
+wins on certainty and on return per dollar of *risked* capital, since its floor
+cannot be negative.
+
+Running both costs ~$2,000 and is the sensible answer: they are uncorrelated,
+neither is capacity-constrained by the other, and together they are roughly
+$490/month against ~$2,000 deployed.
