@@ -234,3 +234,36 @@ capital-velocity multiplier.
 | Worst case | +$47.36 | **−$603 (total)** | gap risk |
 | Horizon | 28d guaranteed | to 31 Dec | continuous |
 | Annualised (min) | **184%** | n/a | n/a |
+
+---
+
+# Why the arbitrage bot is Kalshi-only
+
+Two reasons, one legitimate and one that had to be tested rather than assumed.
+
+**Execution.** Kalshi orders are REST + RSA request signing. Polymarket needs an
+EIP-712 signed CLOB order and a funded Polygon wallet. Only the Kalshi adapter
+is built (`bot/venues.py`). Polymarket *is* targeted by the other bot,
+`bot/poly_mm.py`, which quotes its ETH range ladders.
+
+**There is nothing there for this strategy.** `src/poly_nest.py` runs the same
+nesting scan on Polymarket, which lists exactly the same structure:
+
+```
+what price will X hit on August 4     1 day
+what price will X hit August 3-9      7 days
+what price will X hit in August      31 days
+```
+
+175 legs across BTC/ETH/SOL/XRP, three nested windows each, same Binance feed:
+**zero locked pairs.** Polymarket's nested windows are internally consistent.
+
+(The first run of that scan reported 25 arbitrages, all XRP. They were a
+parsing bug -- the strike regex dropped decimals, so 1.10 / 1.20 / 0.90 all
+collapsed to "1" and produced fake nesting. Fixed; the count went to zero.)
+
+**Cross-venue is also flat.** Kalshi's August one-touch versus Polymarket's,
+barrier by barrier, is -0.2c to -4.2c -- Polymarket sits consistently just
+above Kalshi, which is what the USDT peg predicts. And the windows do not
+actually nest (Polymarket's August window opens ~1 hour later than Kalshi's),
+so the implication would not hold even if the prices were favourable.
