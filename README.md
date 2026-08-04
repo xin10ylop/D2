@@ -113,3 +113,63 @@ Polymarket's ETH range ladder pays but has traded $18,307 across all six days.
 **Capacity is the binding constraint, not signal.** At 15% of ETH-range flow
 and 1.45c/contract that is about $6/day. This is a real edge on a small book,
 not a high-return business, and it should be sized accordingly.
+
+---
+
+# Full-universe sweep
+
+The first pass covered two coins and one contract type. This covers everything.
+
+```
+python3 universe.py        # all 272 Kalshi crypto series -> 106 tradable events
+python3 fetch_coins.py     # 2y hourly for 18 coins
+python3 volterm.py         # horizon-matched vol, calibrated against Deribit
+python3 onetouch.py        # block-bootstrap barrier engine (intra-bar highs)
+python3 scan_barrier.py    # price every one-touch market
+python3 touched.py         # has a barrier already been hit since issuance?
+python3 empirical_touch.py # model-free realised-frequency check
+python3 lock.py            # risk-free locked arbitrage at full book depth
+python3 calendar_arb.py    # one-touch monotonicity in time
+```
+
+## What the sweep found
+
+Kalshi's largest crypto open interest is **not** in the price ladders. It is
+15.1M contracts across the one-touch max/min series -- barrier payoffs on the
+running extremum, which no venue in the set prices with options.
+
+Three independent methods were required, because two of them lied:
+
+1. **Block-bootstrap Monte Carlo** on the coin's own hourly bars, carrying
+   intra-bar highs (closes-only monitoring materially underprices a barrier),
+   rescaled to a market-implied volatility. Validated against Deribit's RND to
+   1.5-2.0c on terminal digitals before any barrier price was trusted.
+2. **Horizon-matched volatility** (`volterm.py`). The first pass priced a
+   150-day barrier with 30-day realised vol and duly reported 35c edges on XRP
+   and DOGE. XRP's 30-day vol is 36.8%; its two-year vol is 84.4%. A
+   mean-reverting forecast, calibrated so it reproduces Deribit's implied term
+   structure on BTC/ETH (rms 4.8%), killed those.
+3. **Direct realised frequency** -- no volatility model at all. Over two years,
+   how often did this coin actually move that far in that many days?
+
+Only 13 of 26 candidates survived all three.
+
+## The result
+
+**Kalshi's BNB annual one-touch ladder (KXBNBMAXY) is stale.** BNB needs +10%
+at any point in five months; the market prices 18.5%, the model says 59%, and
+it has happened 71% of the time -- 0.750 in *both* halves of the sample, with
+BNB's total two-year drift only +11.4%, so it is not a bull-run artifact.
+
+It is confirmed without any model by the calendar relation: touching B by
+31 Aug implies touching B by 31 Dec, yet `KXBNBMAXMON @650` bids **0.32**
+while `KXBNBMAXY @650` offers **0.19**. Buying the far and selling the near
+locks the difference in every state of the world.
+
+**And the whole ladder holds $817 of buyable depth.** Five locked pairs total
+$61 of risk-free profit on $743 of capital (8.3% to December, ~20% annualised).
+
+That is the honest shape of this universe: the venues are efficient wherever
+there is size, and mispriced only where there is not. Kalshi's BTC digital
+ladder trades 2 million contracts a day at a one-cent spread; the ladder with
+a 40-point mispricing trades a few hundred contracts a week.
