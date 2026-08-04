@@ -315,3 +315,44 @@ cannot be negative.
 Running both costs ~$2,000 and is the sensible answer: they are uncorrelated,
 neither is capacity-constrained by the other, and together they are roughly
 $490/month against ~$2,000 deployed.
+
+---
+
+# Audit of the Polymarket $440/month: it does not survive
+
+The figure charged adverse selection at "30% of the half-spread" -- convention,
+not measurement. It is the input that decides the strategy, so `src/adverse.py`
+measures it from Polymarket's own tape: for each print at price P, take the
+volume-weighted price of later prints on the same contract, and score the
+maker's side of the fill.
+
+Filtered to genuine markets (mid 0.10-0.90, quoted spread <= 10c, >= 500
+contracts traded in 24h):
+
+| family | contracts/24h | half-spread | measured drift 15m | NET/ct |
+|---|---|---|---|---|
+| BTC hit | 288,034 | 0.51c | **+6.12c** | −6.61c |
+| BTC above | 96,794 | 0.53c | +1.54c | −2.01c |
+| ETH hit | 65,707 | 0.72c | +11.91c | −12.19c |
+| BTC range | 33,330 | 1.09c | −5.11c | +0.09c |
+
+**Post-fill drift runs 3-20x the half-spread.** Flow is also 76-93% one-sided,
+so a two-sided quoter is filled almost exclusively on the side that is about to
+be wrong. The one non-negative row (BTC range, +0.09c) is inside its own noise
+and rests on a single contract carrying 46% of the family's volume.
+
+The $440/month was an artifact of the assumed 30%. Measured, passive market
+making on these books loses money. Withdrawn.
+
+## Corrected standing
+
+| | Kalshi locked pairs | Polymarket MM |
+|---|---|---|
+| Bankroll | $573 | — |
+| Profit | **+$47 floor, $252 expected** | **negative** |
+| Risk | none at settlement | picked off on every fill |
+| Basis | arithmetic on live quotes | measured on 488k contracts of tape |
+
+Nothing on Polymarket survives its own trade tape. The Kalshi lock is the only
+strategy in this repo with a positive measured expectation, and its ceiling is
+the $573 of depth that exists.
